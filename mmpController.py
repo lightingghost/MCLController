@@ -3,20 +3,18 @@ __author__ = 'lighting'
 from ctypes import *
 import time
 
-#define pointer types for pointers using ctypes
+# define pointer types for pointers using ctypes
 p_int = POINTER(c_int)
 p_uint = POINTER(c_uint)
 p_double = POINTER(c_double)
 
+
 class MMPStage:
-
-
-
     def __init__(self, driverPath):
-        #Load driver
+        # Load driver
         self.mmpStage = cdll.LoadLibrary(driverPath)
 
-        #Get stage handle
+        # Get stage handle
         self.handle = self.mmpStage.MCL_InitHandleOrGetExisting()
         if self.handle == 0:
             print("No Stage")
@@ -29,15 +27,15 @@ class MMPStage:
         maxVelocityThreeAxis = c_double()
         minVelocity = c_double()
 
-        #The function need double* type in C lang.
-        #ctypes.cast(adr,typ) can do this
+        # The function need double* type in C lang.
+        # ctypes.cast(adr,typ) can do this
         self.mmpStage.MCL_MicroDriveInformation(
-            cast(addressof(encoderResolution),p_double),
-            cast(addressof(stepSize),p_double),
-            cast(addressof(maxVelocity),p_double),
-            cast(addressof(maxVelocityTwoAxis),p_double),
-            cast(addressof(maxVelocityThreeAxis),p_double),
-            cast(addressof(minVelocity),p_double),
+            cast(addressof(encoderResolution), p_double),
+            cast(addressof(stepSize), p_double),
+            cast(addressof(maxVelocity), p_double),
+            cast(addressof(maxVelocityTwoAxis), p_double),
+            cast(addressof(maxVelocityThreeAxis), p_double),
+            cast(addressof(minVelocity), p_double),
             self.handle
         )
 
@@ -50,14 +48,12 @@ class MMPStage:
             minVelocity.value
         )
 
-
-    #Move a specific axis of a specific distance at a specific velocity
-    #axis: X=1, Y=2, Z=3
-    #Distance: in mm
-    #Velocity: in mm/s
-
-    def moveDist(self,axis,distance,velocity):
-        dict = {'X':1,'Y':2,'Z':3,'x':1,'y':2,'z':3,1:1,2:2,3:3}
+    # Move a specific axis of a specific distance at a specific velocity
+    # axis: X=1, Y=2, Z=3
+    # Distance: in mm
+    # Velocity: in mm/s
+    def moveDist(self, axis, distance, velocity = 3):
+        dict = {'X': 1, 'Y': 2, 'Z': 3, 'x': 1, 'y': 2, 'z': 3, 1: 1, 2: 2, 3: 3}
         rounding = 2
         para = c_uint(dict[axis])
         status = self.mmpStage.MCL_MicroDriveMoveProfile(
@@ -76,27 +72,43 @@ class MMPStage:
         y = c_double()
         z = c_double()
         self.mmpStage.MCL_MicroDriveReadEncoders(
-            cast(addressof(x),p_double),
-            cast(addressof(y),p_double),
-            cast(addressof(z),p_double),
+            cast(addressof(x), p_double),
+            cast(addressof(y), p_double),
+            cast(addressof(z), p_double),
             self.handle
         )
         self.mmpStage.MCL_MicroDriveWait(self.handle)
 
-        return (x.value,y.value,z.value)
+        return (x.value, y.value, z.value)
 
-    def moveTo(self,axis,position,velocity):
-        dict = {'X':1,'Y':2,'Z':3,'x':1,'y':2,'z':3,1:1,2:2,3:3}
+    def moveTo(self, axis, position, velocity = 3):
+        dict = {'X': 1, 'Y': 2, 'Z': 3, 'x': 1, 'y': 2, 'z': 3, 1: 1, 2: 2, 3: 3}
         instPos = self.getPosition()
-        distance = position - instPos[dict[axis]-1]
-        self.moveDist(axis,distance,velocity)
+        distance = position - instPos[dict[axis] - 1]
+        self.moveDist(axis, distance, velocity)
         return 0
 
-    def exit(self):
-        for i in range(1,4):
-            self.moveTo(i,0.0,3.0)
-        self.mmpStage.MCL_ReleaseHandle(self.handle)
+    def scan(self, length, width, resolution):
+        init_x = - width/2
+        init_y = length/2
+        self.moveDist('x', init_x)
+        self.moveDist('y', init_y)
+        num_of_scans = int(length / resolution) + 1
+        for scan in range(1,num_of_scans + 1)
+            if scan % 2 == 1:
+                self.moveDist('x',width)
+            else:
+                self.moveDist('x',-width)
+            if scan == num_of_scans:
+                break
+            else:
+                self.moveDist('y',-resolution)
 
+
+    def exit(self):
+        for i in range(1, 4):
+            self.moveTo(i, 0.0, 3.0)
+        self.mmpStage.MCL_ReleaseHandle(self.handle)
 
 
 if __name__ == '__main__':
@@ -104,12 +116,9 @@ if __name__ == '__main__':
     driverPath = 'C:\\Program Files\\Mad City Labs\\MicroDrive\\MicroDrive'
     stage = MMPStage(driverPath)
     stage.exit()
-    #stage.moveDist('x',1,3)
-    #stage.moveTo('z',0,3)
+    # stage.moveDist('x',1,3)
+    # stage.moveTo('z',0,3)
 
     list = stage.getPosition()
     for var in list:
         print(var)
-
-
-
