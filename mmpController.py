@@ -67,7 +67,7 @@ class MMPStage:
             c_int(rounding),
             self.handle
         )
-        time.sleep(abs(distance/velocity)+1)
+        self.mmpStage.MCL_MicroDriveWait(self.handle)
         print(status)
         return 0
 
@@ -81,6 +81,7 @@ class MMPStage:
             cast(addressof(z),p_double),
             self.handle
         )
+        self.mmpStage.MCL_MicroDriveWait(self.handle)
 
         return (x.value,y.value,z.value)
 
