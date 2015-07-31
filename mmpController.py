@@ -10,6 +10,7 @@ p_double = POINTER(c_double)
 
 
 class MMPStage:
+
     def __init__(self, driverPath):
         # Load driver
         self.mmpStage = cdll.LoadLibrary(driverPath)
@@ -64,7 +65,7 @@ class MMPStage:
             self.handle
         )
         self.mmpStage.MCL_MicroDriveWait(self.handle)
-        print(status)
+        #print(status)
         return 0
 
     def getPosition(self):
@@ -91,19 +92,22 @@ class MMPStage:
     def scan(self, length, width, resolution):
         init_x = - width/2
         init_y = length/2
-        self.moveDist('x', init_x)
-        self.moveDist('y', init_y)
+        self.moveTo('x', init_x)
+        self.moveTo('y', init_y)
         num_of_scans = int(length / resolution) + 1
-        for scan in range(1,num_of_scans + 1)
+        for scan in range(1,num_of_scans + 1):
+            pos = self.getPosition()
+            print(pos)
             if scan % 2 == 1:
                 self.moveDist('x',width)
             else:
                 self.moveDist('x',-width)
+            pos = self.getPosition()
+            print(pos)
             if scan == num_of_scans:
                 break
             else:
                 self.moveDist('y',-resolution)
-
 
     def exit(self):
         for i in range(1, 4):
@@ -115,10 +119,7 @@ if __name__ == '__main__':
 
     driverPath = 'C:\\Program Files\\Mad City Labs\\MicroDrive\\MicroDrive'
     stage = MMPStage(driverPath)
-    stage.exit()
+    # stage.exit()
     # stage.moveDist('x',1,3)
-    # stage.moveTo('z',0,3)
-
-    list = stage.getPosition()
-    for var in list:
-        print(var)
+    stage.scan(10,10,1)
+    stage.exit()
